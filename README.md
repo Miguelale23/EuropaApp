@@ -11,6 +11,8 @@
     - [Pestaña eventos](#pestaña-eventos)
     - [Pestaña decanatos](#pestaña-decanatos)
 - [Desarrollo de la app](#desarrollo)
+    - [Cómo funciona](#cómo-funciona)
+        - []
     - [Por hacer](#por-añadir)
 
 
@@ -28,7 +30,7 @@ En estos post se podrá poner un simple difundido con opcionalmente alguna image
 
 Como colegial, al abrir la aplicación se presentará una pantaña de inicio de sesión. La contraseña y usuario serán proporcionadas por el decano de informática y con ellas podrás entrar. 
 Una vez dentro, puedes ver los posts que se van publicando en la pestaña de NOVEDADES. En esta pestaña para pasar al siguiente post se tiene que deslizar hacia la derecha, revelando el siguiente en la cola. Si no hay más, saldrá un mensaje diciendo que la cola está vacía.
-En la pestaña de EVENTOS, se verá un calendario que contiene el calendario del curso y se puede ciclar entre meses. En cada día podrá haber unas bolitas de colores indicando que hay eventos de un determinado decanato en ese día. En la leyenda se puede saber cuál es.
+En la pestaña de EVENTOS, se verá un calendario que contiene el calendario del curso y se puede ciclar entre meses. En cada día podrá haber unas bolitas de colores con texto indicando que hay eventos de un determinado decanato en ese día. En la leyenda se puede saber cuál es.
 ![alt text](calendario.png)
 
 Al clicar en un día, saldrá una ventana deslizable verticalmente que se podrá ver todos los eventos disponibles para ese día. En caso de ser privilegiado, se podrá ver más información sobre ese post, como quién lo ha visto, quien ha votado, y quien ha confirmado lectura mediante deslizar.
@@ -62,7 +64,7 @@ Para añadir un evento al calendario se hará de forma similar pero solo será u
 
 #### Pestaña eventos
 
-Desde esta pestaña se podrá ver los eventos distribuidos en un calendario, separados por decanatos y visibles por bolitas de colores debajo de cada día que indican que ese día habia evento.
+Desde esta pestaña se podrá ver los eventos distribuidos en un calendario, separados por decanatos y visibles por bolitas con texto de colores debajo de cada día que indican el evento de ese día.
 El significado de los colores de las bolitas lo muestra una leyenda justo abajo del calendario. 
 Al clicar en un día, muestra los eventos de ese día en forma de deslizador vertical.
 
@@ -78,10 +80,24 @@ Se podrán ver todos los posts de los decanatos, así como los posts de enlaces 
 
 
 ## DESARROLLO 
+
+### RESUMEN
+
+La aplicación será un desplegable que se podrá instalar en ios y android. Está desarrollada en react-native, de manera que no hará falta cambiar el código para desplegarlo en ios o en android.
+La aplicación se comunica con un servidor node.js que usa express mediante peticiones GET, POST, etc, y mediante la función 'fetch' de javascript.
+Desde el backend, tenemos una base de datos única que funciona con SQLite. Tiene una tabla para usuarios y otra tabla para posts.
+La aplicación necesitará de un ordenador corriendo el servidor backend constantemente para funcionar, además de tener su puerto disponible al internet para poder comunicarse desde cualquier lado.
+
 ### Por añadir
 
-- [ ] Sistema de inicio de sesión
+- [x] Sistema de inicio de sesión
+- [x] Sistema de API_KEY
+- [ ] Optimizar el codigo de API en frontend para q se lea mejor
 - [ ] Componente post
+- [ ] Poder recibir posts al entrar a la app
+- [ ] Poder subir posts
+- [ ] Poder elegir a quien subir posts
+- [ ] Poder elegir entrar a grupos de recibimiento de posts
 - [ ] Diseño de pestaña de decanatos
 - [ ] Diseño de pestaña de novedades
 - [ ] Diseño de pestaña de eventos
@@ -95,236 +111,87 @@ Se podrán ver todos los posts de los decanatos, así como los posts de enlaces 
 - [ ] Añadir emojis reacción
 - [ ] Pestaña de lector de vigías
 
-### Datos
+### Cómo funciona
 
 #### FRONTEND
 
-react native (expo)
+##### Herramientas de desarrollo
+Se esta desarrollando con EXPO, una plataforma que tiene utilidades para desarrollar en react-native.
+React native es un framework para desarrollar aplicaciones nativas que se podrán desplegar en ios y en android.
+##### Como funciona el login
+Nada mas entrar a la aplicación, se entra 
+
 
 #### BACKEND
 
+servidor NODE.JS con EXPRESS con base de datos sqLite
+
+guardar datos como las credenciales con expo-secure-store
+
 ### Notas
 
-npm run android 
+1. Tablas Principales Simplificadas
+1.1 Usuarios (users)
 
-para declarar variables en react supongo, antes del return
-const [newItem, setNewItem] = useState("")
-const [todos, setTodos] = useState([])
-para cambiarlas es necesario usar el setTodos
+Esta tabla almacenará la información básica de los usuarios.
 
-si queremos acceder a una variable o hacer cosas de js en la parte de html tenemos que meterlo en curly brackets {} 
+    user_id (Primary Key, auto-increment): ID único del usuario.
+    username (Unique): Nombre de usuario.
+    email (Unique): Correo electrónico.
+    password_hash: Hash de la contraseña.
+    created_at: Fecha de creación del usuario.
+
+1.2 Posts (posts)
+
+Tabla que almacenará los posts publicados.
+
+    post_id (Primary Key, auto-increment): ID único del post.
+    user_id (Foreign Key): ID del usuario que creó el post.
+    content: Contenido del post.
+    has_vote: Booleano indicando si el post tiene votación.
+    created_at: Fecha de creación del post.
+
+1.3 Votos (votes)
+
+Tabla que registrará los votos de los usuarios en los posts.
+
+    vote_id (Primary Key, auto-increment): ID único del voto.
+    user_id (Foreign Key): ID del usuario que votó.
+    post_id (Foreign Key): ID del post.
+    vote: Valor del voto (booleano, "sí" o "no").
+    voted_at: Fecha del voto.
+
+1.4 Lectura de Posts (post_reads)
+
+Tabla que registrará cuando un usuario desliza un post para marcarlo como leído.
+
+    read_id (Primary Key, auto-increment): ID único del registro de lectura.
+    user_id (Foreign Key): ID del usuario que deslizó el post.
+    post_id (Foreign Key): ID del post deslizado.
+    read_at: Fecha en que se deslizó el post.
+
+2. Relaciones y Consultas
+
+    Obtener posts no deslizados por un usuario: Consulta con LEFT JOIN entre posts y post_reads, filtrando los que no tienen coincidencia en post_reads.
+    Obtener votos de un post: Filtrar la tabla votes por post_id.
+    Ver si un usuario ha votado en un post: Filtrar votes por user_id y post_id.
+
+3. Optimizaciones para 180 Usuarios
+
+    Índices básicos: Asegúrate de tener índices en user_id en las tablas posts, votes, y post_reads para mejorar la velocidad de las consultas.
+    Consultas rápidas: Dado el número limitado de usuarios y posts, las consultas deberían ser rápidas sin necesidad de optimizaciones complejas.
+    Simplificación: Evita complicaciones innecesarias como particionamiento o caché para esta escala de usuarios.
+
+4. Consideraciones Prácticas
+
+    Manejo de Crecimiento Moderado: Si en algún momento la base de usuarios o de posts crece un poco más allá de lo esperado, este diseño sigue siendo robusto.
+    Mantenimiento: La simplicidad en el diseño facilitará el mantenimiento de la base de datos y la aplicación en general.
+
 
 {condition && "value"} si condition, mostramos value
 
-coger datos de local
-const [todos, setTodos] = useState(() => {
-    const localValue = localStorage.getItem("ITEMS")
-    if (localValue == null) return []
 
-    return JSON.parse(localValue)
-  })
-
-  useEffect(() =>{
-    localStorage.setItem("ITEMS", JSON.stringify(todos))
-  }, [todos])
-
-
-Especificaciones del Servidor
-Requisitos Mínimos
-
-    CPU:
-        2 vCPUs.
-    Memoria (RAM):
-        4 GB.
-    Almacenamiento:
-        40 GB SSD.
-    Ancho de Banda:
-        100 Mbps.
-    Sistema Operativo:
-        Linux (Ubuntu, CentOS, etc.).
-
-Requisitos Recomendados
-
-    CPU:
-        4 vCPUs.
-    Memoria (RAM):
-        8 GB.
-    Almacenamiento:
-        80 GB SSD.
-    Ancho de Banda:
-        200 Mbps o más.
-    Sistema Operativo:
-        Linux (Ubuntu, CentOS, etc.).
-
-Tecnologías Recomendadas
-
-    Backend:
-        Node.js con Express.
-        Django o Flask si prefieres Python.
-        Spring Boot para Java.
-
-    Base de Datos:
-        PostgreSQL o MySQL para bases de datos relacionales.
-        MongoDB si prefieres una base de datos NoSQL.
-
-    Servidor Web:
-        Nginx para manejar las solicitudes HTTP y servir contenido estático.
-
-    Autenticación:
-        JWT (JSON Web Tokens) para manejar la autenticación y autorización.
-
-    APIs REST:
-        Crear endpoints REST para manejar la creación, lectura, actualización y eliminación (CRUD) de los posts.
-
-        Implementación Paso a Paso
-Configuración del Servidor
-
-    Instalación y Configuración del Servidor:
-        Configura una instancia de Linux en tu proveedor de cloud (AWS, DigitalOcean, etc.).
-        Instala Node.js y Nginx.
-        Configura un firewall para permitir solo el tráfico necesario (HTTP/HTTPS).
-
-    Configuración de la Base de Datos:
-        Instala y configura PostgreSQL, MySQL o MongoDB.
-        Crea una base de datos y tablas/colecciones necesarias para almacenar los posts y usuarios.
-
-Desarrollo del Backend
-
-    Crear un Servidor Express:
-
-    javascript
-
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const app = express();
-
-app.use(bodyParser.json());
-app.use(cors());
-
-// Endpoints
-app.post('/posts', (req, res) => {
-    // Lógica para crear un post
-});
-
-app.get('/posts', (req, res) => {
-    // Lógica para obtener todos los posts
-});
-
-app.get('/posts/:id', (req, res) => {
-    // Lógica para obtener un post por ID
-});
-
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-});
-
-Conectar a la Base de Datos:
-
-    Usa un ORM como Sequelize (para PostgreSQL/MySQL) o Mongoose (para MongoDB).
-
-javascript
-
-    const { Sequelize } = require('sequelize');
-    const sequelize = new Sequelize('database', 'username', 'password', {
-        host: 'localhost',
-        dialect: 'postgres' // o 'mysql'
-    });
-
-    // Definir un modelo para los posts
-    const Post = sequelize.define('Post', {
-        title: {
-            type: Sequelize.STRING,
-            allowNull: false
-        },
-        content: {
-            type: Sequelize.TEXT,
-            allowNull: false
-        }
-    });
-
-    sequelize.sync();
-
-Desarrollo de la Aplicación Móvil
-
-    Configurar React Native:
-        Crea un nuevo proyecto con Expo o React Native CLI.
-
-    sh
-
-npx expo init MySocialApp
-cd MySocialApp
-
-Hacer Solicitudes HTTP al Servidor:
-
-    Usa Axios para interactuar con la API REST del backend.
-
-javascript
-
-    import axios from 'axios';
-    import React, { useState, useEffect } from 'react';
-    import { View, Text, Button, TextInput, FlatList } from 'react-native';
-
-    const App = () => {
-        const [posts, setPosts] = useState([]);
-        const [newPost, setNewPost] = useState({ title: '', content: '' });
-
-        useEffect(() => {
-            axios.get('http://YOUR_SERVER_IP:3000/posts')
-                .then(response => {
-                    setPosts(response.data);
-                });
-        }, []);
-
-        const addPost = () => {
-            axios.post('http://YOUR_SERVER_IP:3000/posts', newPost)
-                .then(response => {
-                    setPosts([...posts, response.data]);
-                    setNewPost({ title: '', content: '' });
-                });
-        };
-
-        return (
-            <View>
-                <TextInput
-                    placeholder="Title"
-                    value={newPost.title}
-                    onChangeText={(text) => setNewPost({ ...newPost, title: text })}
-                />
-                <TextInput
-                    placeholder="Content"
-                    value={newPost.content}
-                    onChangeText={(text) => setNewPost({ ...newPost, content: text })}
-                />
-                <Button title="Add Post" onPress={addPost} />
-                <FlatList
-                    data={posts}
-                    renderItem={({ item }) => (
-                        <View>
-                            <Text>{item.title}</Text>
-                            <Text>{item.content}</Text>
-                        </View>
-                    )}
-                    keyExtractor={(item) => item.id.toString()}
-                />
-            </View>
-        );
-    };
-
-    export default App;
-
-Seguridad y Mantenimiento
-
-    Implementar SSL/TLS:
-        Usa Let's Encrypt para obtener un certificado SSL gratuito.
-        Configura Nginx para manejar HTTPS.
-
-    Autenticación y Autorización:
-        Implementa JWT para manejar la autenticación de usuarios.
-
-    Backups y Monitoreo:
-        Configura backups automáticos de la base de datos.
-        Usa herramientas como PM2 para monitorear y mantener el servidor Node.js.
+REDIS: cache
 
 Docker: Si tu portátil lo permite, puedes usar Docker para contenerizar tu aplicación. Esto facilita la gestión del entorno y el despliegue.
 PM2: Es una herramienta de manejo de procesos para Node.js que puede reiniciar tu aplicación automáticamente en caso de fallos y mantenerla corriendo como un servicio.
